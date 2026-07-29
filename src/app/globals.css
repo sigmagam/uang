@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  background-color: #FAF6EC;
+}
+
+body {
+  color: #1E2A21;
+}
+
+/* Tabular numbers for all currency/number figures so columns align like a real ledger */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+::selection {
+  background-color: #E3C179;
+  color: #1E2A21;
+}
+
+/* subtle ledger-paper texture: faint horizontal rule lines */
+.ledger-lines {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent 27px,
+    #DCD3BC 28px
+  );
+}
