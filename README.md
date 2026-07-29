@@ -116,4 +116,3 @@ schema.sql                    -> skema tabel untuk dijalankan di Neon
   browser) yang ditandatangani dengan `SESSION_SECRET`.
 - Hanya ada **satu akun admin** (berbasis environment variable) — member yang dicatat di
   dalam aplikasi murni data, bukan akun login.
-# uang
