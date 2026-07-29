@@ -91,10 +91,6 @@ export default async function MemberDetailPage({
   const monthSaldo = txRows
     .filter((t) => t.type === "saldo")
     .reduce((s, t) => s + Number(t.amount), 0);
-  const monthPengeluaran = txRows
-    .filter((t) => t.type === "pengeluaran")
-    .reduce((s, t) => s + Number(t.amount), 0);
-  const endingBalance = carryIn + monthSaldo - monthPengeluaran;
 
   const prev = shiftMonth(year, month, -1);
   const next = shiftMonth(year, month, 1);
@@ -156,35 +152,30 @@ export default async function MemberDetailPage({
       </div>
 
       {/* Month summary */}
-      <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
-        <MiniStat label="Saldo Awal Bulan" value={formatRupiah(carryIn)} />
+      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <MiniStat label="Total Sebelum Bulan Ini" value={formatRupiah(carryIn)} />
         <MiniStat
-          label="Saldo Masuk Bulan Ini"
+          label="Kontribusi Bulan Ini"
           value={formatRupiah(monthSaldo)}
           tone="ledger"
         />
         <MiniStat
-          label="Pengeluaran Bulan Ini"
-          value={formatRupiah(monthPengeluaran)}
-          tone="rose"
-        />
-        <MiniStat
-          label="Sisa Saldo Akhir Bulan"
-          value={formatRupiah(endingBalance)}
-          tone={endingBalance >= 0 ? "ledger" : "rose"}
+          label="Total Kontribusi s/d Bulan Ini"
+          value={formatRupiah(carryIn + monthSaldo)}
+          tone="ledger"
           emphasized
         />
       </div>
 
-      {/* Add transaction */}
+      {/* Add contribution */}
       <details className="group mb-8 rounded-card border border-line bg-white/70 shadow-card">
         <summary className="flex cursor-pointer list-none items-center justify-between px-6 py-4 font-body text-sm font-semibold text-ink">
-          <span>+ Tambah Saldo / Pengeluaran</span>
+          <span>+ Tambah Kontribusi Saldo</span>
           <span className="text-ink/40 transition group-open:rotate-45">+</span>
         </summary>
         <form
           action={addTransactionAction}
-          className="grid grid-cols-1 gap-4 border-t border-line px-6 py-5 md:grid-cols-5"
+          className="grid grid-cols-1 gap-4 border-t border-line px-6 py-5 md:grid-cols-4"
         >
           <input type="hidden" name="member_id" value={member.id} />
           <input
@@ -192,20 +183,6 @@ export default async function MemberDetailPage({
             name="redirect_to"
             value={`${basePath}?month=${monthParam}`}
           />
-
-          <div>
-            <label className="mb-1.5 block font-body text-xs font-semibold uppercase tracking-wide text-ink/60">
-              Jenis
-            </label>
-            <select
-              name="type"
-              defaultValue="saldo"
-              className="w-full rounded-lg border border-line bg-paper px-3 py-2.5 text-sm outline-none focus:border-ledger focus:ring-2 focus:ring-ledger/20"
-            >
-              <option value="saldo">Saldo Masuk</option>
-              <option value="pengeluaran">Pengeluaran</option>
-            </select>
-          </div>
 
           <div>
             <label className="mb-1.5 block font-body text-xs font-semibold uppercase tracking-wide text-ink/60">
@@ -247,7 +224,7 @@ export default async function MemberDetailPage({
             />
           </div>
 
-          <div className="md:col-span-5">
+          <div className="md:col-span-4">
             <SubmitButton className="rounded-full bg-ledger px-6 py-2.5 text-sm font-semibold text-paper transition hover:bg-ledger-dark disabled:opacity-60">
               Simpan
             </SubmitButton>
@@ -255,17 +232,12 @@ export default async function MemberDetailPage({
         </form>
       </details>
 
-      {/* Weekly ledger breakdown */}
+      {/* Weekly contribution breakdown */}
       <div className="space-y-5">
         {buckets.map((b: WeekBucket) => {
           const txs = byBucket.get(b.index) || [];
-          const weekSaldo = txs
-            .filter((t) => t.type === "saldo")
-            .reduce((s, t) => s + Number(t.amount), 0);
-          const weekPengeluaran = txs
-            .filter((t) => t.type === "pengeluaran")
-            .reduce((s, t) => s + Number(t.amount), 0);
-          runningBalance += weekSaldo - weekPengeluaran;
+          const weekSaldo = txs.reduce((s, t) => s + Number(t.amount), 0);
+          runningBalance += weekSaldo;
 
           return (
             <div
@@ -285,18 +257,15 @@ export default async function MemberDetailPage({
                   <span className="text-ledger-dark">
                     +{formatRupiah(weekSaldo)}
                   </span>
-                  <span className="text-rose">
-                    -{formatRupiah(weekPengeluaran)}
-                  </span>
                   <span className="rounded-full bg-ink px-3 py-1 font-semibold text-paper tabular">
-                    Sisa {formatRupiah(runningBalance)}
+                    Total {formatRupiah(runningBalance)}
                   </span>
                 </div>
               </div>
 
               {txs.length === 0 ? (
                 <p className="px-5 py-5 font-body text-sm text-ink/40">
-                  Tidak ada transaksi minggu ini.
+                  Tidak ada kontribusi minggu ini.
                 </p>
               ) : (
                 <table className="w-full font-body text-sm">
@@ -306,29 +275,13 @@ export default async function MemberDetailPage({
                         <td className="w-24 px-5 py-2.5 text-xs text-ink/50">
                           {formatDateShort(parseSQLDate(toDateStr(t.date)))}
                         </td>
-                        <td className="px-2 py-2.5">
-                          <span
-                            className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
-                              t.type === "saldo"
-                                ? "bg-ledger/10 text-ledger-dark"
-                                : "bg-rose/10 text-rose"
-                            }`}
-                          >
-                            {t.type === "saldo" ? "Saldo" : "Pengeluaran"}
-                          </span>
-                        </td>
                         <td className="px-2 py-2.5 text-ink/70">
                           {t.description || (
                             <span className="text-ink/30">—</span>
                           )}
                         </td>
-                        <td
-                          className={`px-2 py-2.5 text-right tabular font-semibold ${
-                            t.type === "saldo" ? "text-ledger-dark" : "text-rose"
-                          }`}
-                        >
-                          {t.type === "saldo" ? "+" : "-"}
-                          {formatRupiah(t.amount)}
+                        <td className="px-2 py-2.5 text-right tabular font-semibold text-ledger-dark">
+                          +{formatRupiah(t.amount)}
                         </td>
                         <td className="w-16 px-5 py-2.5 text-right">
                           <form action={deleteTransactionAction}>
@@ -344,7 +297,7 @@ export default async function MemberDetailPage({
                               value={`${basePath}?month=${monthParam}`}
                             />
                             <ConfirmSubmitButton
-                              confirmMessage="Hapus transaksi ini?"
+                              confirmMessage="Hapus kontribusi ini?"
                               className="font-body text-xs font-semibold text-ink/40 hover:text-rose"
                             >
                               Hapus
